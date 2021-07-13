@@ -11,6 +11,9 @@ import com.amazonaws.services.sns.AmazonSNS;
 import com.amazonaws.services.sns.AmazonSNSClientBuilder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -27,22 +30,24 @@ public class PatientCheckoutLambda {
     private final AmazonSNS sns = AmazonSNSClientBuilder.defaultClient();
 
     public void handler(S3Event event, Context context) {
-        LambdaLogger logger = context.getLogger();
+//        LambdaLogger logger = context.getLogger();
+        Logger logger = LoggerFactory.getLogger(PatientCheckoutLambda.class);
+
         event.getRecords().forEach(record -> {
             S3Object object = s3.getObject(record.getS3().getBucket().getName(), record.getS3().getObject().getKey());
             S3ObjectInputStream s3ObjectInputStream = object.getObjectContent();
             try {
-                logger.log("Reading data from S3");
+                logger.info("Reading data from S3");
                 List<PatientCheckoutEvent> patientCheckoutEvents
                         = Arrays.asList(objectMapper.readValue(s3ObjectInputStream, PatientCheckoutEvent[].class));
-                logger.log(patientCheckoutEvents.toString());
+                logger.info(patientCheckoutEvents.toString());
                 s3ObjectInputStream.close();
-                logger.log("Message being published to SNS");
+                logger.info("Message being published to SNS");
                 publishMessageToSNS(patientCheckoutEvents);
             } catch (IOException e) {
                 StringWriter stringWriter = new StringWriter();
                 e.printStackTrace(new PrintWriter(stringWriter));
-                logger.log(stringWriter.toString());
+                logger.error("Exception is: ", e);
             }
         });
     }
