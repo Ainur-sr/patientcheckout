@@ -11,6 +11,8 @@ Globals:
     Timeout: 20
 
 Resources:
+  PatientCheckoutDLQ:
+    Type: AWS::SNS::Topic
   PatientCheckoutBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -24,6 +26,9 @@ Resources:
       Handler: com.ainur.aws.lambda.s3sns.PatientCheckoutLambda::handler
       Runtime: java11
       MemorySize: 512
+      DeadLetterQueue:
+        Type: SNS
+        TargetArn: !Ref PatientCheckoutDLQ
       Policies:
         - S3ReadPolicy:
             BucketName: !Sub ${AWS::StackName}-${AWS::AccountId}-${AWS::Region}
@@ -50,3 +55,15 @@ Resources:
           Type: SNS # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Topic: !Ref PatientCheckoutTopic
+  ErrorHandlingFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: patientcheckout
+      Handler: com.ainur.aws.lambda.s3sns.errorhandling.ErrorHandler::handler
+      Runtime: java11
+      MemorySize: 512
+      Events:
+        SNSEvent:
+          Type: SNS # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Topic: !Ref PatientCheckoutDLQ

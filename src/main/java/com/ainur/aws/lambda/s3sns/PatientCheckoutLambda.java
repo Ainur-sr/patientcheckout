@@ -30,7 +30,6 @@ public class PatientCheckoutLambda {
     private final AmazonSNS sns = AmazonSNSClientBuilder.defaultClient();
 
     public void handler(S3Event event, Context context) {
-//        LambdaLogger logger = context.getLogger();
         Logger logger = LoggerFactory.getLogger(PatientCheckoutLambda.class);
 
         event.getRecords().forEach(record -> {
@@ -45,9 +44,8 @@ public class PatientCheckoutLambda {
                 logger.info("Message being published to SNS");
                 publishMessageToSNS(patientCheckoutEvents);
             } catch (IOException e) {
-                StringWriter stringWriter = new StringWriter();
-                e.printStackTrace(new PrintWriter(stringWriter));
                 logger.error("Exception is: ", e);
+                throw new RuntimeException("Error while processing S3 event", e);
             }
         });
     }
