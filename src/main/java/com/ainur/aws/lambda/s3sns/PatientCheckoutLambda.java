@@ -28,9 +28,9 @@ public class PatientCheckoutLambda {
     private final AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final AmazonSNS sns = AmazonSNSClientBuilder.defaultClient();
+    private final Logger logger = LoggerFactory.getLogger(PatientCheckoutLambda.class);
 
     public void handler(S3Event event, Context context) {
-        Logger logger = LoggerFactory.getLogger(PatientCheckoutLambda.class);
 
         event.getRecords().forEach(record -> {
             S3Object object = s3.getObject(record.getS3().getBucket().getName(), record.getS3().getObject().getKey());
